@@ -1,0 +1,7 @@
+var config = {
+	host: '127.0.0.1',
+	port: 3000,
+	neo4j_url: 'http://localhost:7474/db/data/cypher?includeStats=false'
+};
+
+module.exports = config;
