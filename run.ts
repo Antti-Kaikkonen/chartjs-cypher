@@ -44,11 +44,13 @@ let lineChartOptions = {
         }
     },
     scales: {
+        display: true,
         xAxes: [{
             type: 'time',
             distribution: 'linear'
         }],
         yAxes: [{
+          display: true,
           scaleLabel: {
             display: true,
             labelString: ''
@@ -74,11 +76,6 @@ export interface CypherResponse {
   columns?: string[];
   data?: object[];
 }
-
-
-let asd = (a: number): number => {
-  return 1;
-}
  
 
 let executeQuery = (query: string, params: object, cb: (error, response, body: CypherResponse) => void): any => {
@@ -93,7 +90,6 @@ let executeQuery = (query: string, params: object, cb: (error, response, body: C
 };
 
 http.createServer((request, response) => {
-
   let query: any = url.parse(request.url, true).query;
   if (query.query) {
     executeQuery(query.query, {}, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
@@ -132,7 +128,7 @@ http.createServer((request, response) => {
               borderColor: chartColors[index].borderColor,
               fill: false,
               borderWidth: 1,
-              pointRadius: 1,
+              pointRadius: (query.x_axis === "false" && query.y_axis === "false") ? 0 : 1,
               pointHitRadius: 5, 
               data: data.map(row => {
                 return {x: convertToDate ? new Date(row[0]*1000) : row[0], y: row[1]};
@@ -153,7 +149,7 @@ http.createServer((request, response) => {
             borderColor: chartColors[0].borderColor,
             fill: false,
             borderWidth: 1,
-            pointRadius: 1,
+            pointRadius: (query.x_axis === "false" && query.y_axis === "false") ? 0 : 1,
             pointHitRadius: 5,
             data: data.map(row => {
                 return {x: convertToDate ? new Date(row[0]*1000) : row[0], y: row[1]};
@@ -229,6 +225,8 @@ http.createServer((request, response) => {
             display: false
           }
         }
+        chartJsOptions.options.scales.xAxes[0].display = !(query.x_axis === "false");
+        chartJsOptions.options.scales.yAxes[0].display = !(query.y_axis === "false");
       }
 
       chartJsOptions.options.legend = {
