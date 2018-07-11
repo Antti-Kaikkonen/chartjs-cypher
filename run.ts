@@ -20,30 +20,34 @@ app.options("/*", function(req, res, next){
   res.sendStatus(200);
 });	
 
-app.get("/line.png", (clientRequest: express.Request, clientResponse: express.Response) => {
+app.get("/line.png", (clientRequest: express.Request, clientResponse: express.Response, next: express.NextFunction) => {
   let query = clientRequest.query.query;
   let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params) : {};
   executeQuery(query, params, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
-    if (cypherError || cypherResponse.statusCode != 200) {
-      clientResponse.sendStatus(400);
-    }
-    let pointRadius = (clientRequest.query.x_axis === "false" && clientRequest.query.y_axis === "false") ? 0 : 1;
-    let dataSets = responseToDataSets(cypherBody, pointRadius);
+    try {
+      if (cypherError || cypherResponse.statusCode != 200) {
+        clientResponse.sendStatus(400);
+      }
+      let pointRadius = (clientRequest.query.x_axis === "false" && clientRequest.query.y_axis === "false") ? 0 : 1;
+      let dataSets = responseToDataSets(cypherBody, pointRadius);
 
-    let chartJsOptions = {
-      type: "line",
-      data: {
-        datasets: dataSets
-      },
-      options: {... lineChartOptions}
-    };
-    configureAxes(chartJsOptions, clientRequest.query);
-    configureGlobal(chartJsOptions, clientRequest.query);
-    sendChart(chartJsOptions, getWidth(clientRequest.query), getHeight(clientRequest.query), clientResponse);
+      let chartJsOptions = {
+        type: "line",
+        data: {
+          datasets: dataSets
+        },
+        options: {... lineChartOptions}
+      };
+      configureAxes(chartJsOptions, clientRequest.query);
+      configureGlobal(chartJsOptions, clientRequest.query);
+      sendChart(chartJsOptions, getWidth(clientRequest.query), getHeight(clientRequest.query), clientResponse);
+    } catch (error) {
+      next(error);
+    } 
   });  
 });
 
-app.get("/bar.png", (clientRequest: express.Request, clientResponse: express.Response) => {
+app.get("/bar.png", (clientRequest: express.Request, clientResponse: express.Response, next: express.NextFunction) => {
   let query: string = clientRequest.query.query;
   let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params) : {};
   let x_axis: boolean = clientRequest.query.x_axis !== "false";
@@ -52,58 +56,66 @@ app.get("/bar.png", (clientRequest: express.Request, clientResponse: express.Res
   let width: number = Number(clientRequest.query.width);
   let height: number = Number(clientRequest.query.height);
   executeQuery(query, params, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
-    if (cypherError || cypherResponse.statusCode != 200) {
-      clientResponse.sendStatus(400);
-    }
-    let pointRadius = (clientRequest.query.x_axis === "false" && clientRequest.query.y_axis === "false") ? 0 : 1;
-    let dataSets = responseToDataSets(cypherBody, pointRadius);
-    
-    let chartJsOptions = {
-      type: "bar",
-      data: {
-        datasets: dataSets
-      },
-      options: {... barChartOptions} 
-    }
-    configureAxes(chartJsOptions, clientRequest.query);
-    configureGlobal(chartJsOptions, clientRequest.query);
-    sendChart(chartJsOptions, getWidth(clientRequest.query), getHeight(clientRequest.query), clientResponse);
+    try {
+      if (cypherError || cypherResponse.statusCode != 200) {
+        clientResponse.sendStatus(400);
+      }
+      let pointRadius = (clientRequest.query.x_axis === "false" && clientRequest.query.y_axis === "false") ? 0 : 1;
+      let dataSets = responseToDataSets(cypherBody, pointRadius);
+      
+      let chartJsOptions = {
+        type: "bar",
+        data: {
+          datasets: dataSets
+        },
+        options: {... barChartOptions} 
+      }
+      configureAxes(chartJsOptions, clientRequest.query);
+      configureGlobal(chartJsOptions, clientRequest.query);
+      sendChart(chartJsOptions, getWidth(clientRequest.query), getHeight(clientRequest.query), clientResponse);
+    } catch (error) {
+      next(error);
+    }  
   }); 
+    
 });
 
-app.get("/pie.png", (clientRequest: express.Request, clientResponse: express.Response) => {
+app.get("/pie.png", (clientRequest: express.Request, clientResponse: express.Response, next: express.NextFunction) => {
   let query = clientRequest.query.query;
   let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params) : {};
   executeQuery(query, params, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
-    if (cypherError || cypherResponse.statusCode != 200) {
-      clientResponse.sendStatus(400);
-    }
+    try {
+      if (cypherError || cypherResponse.statusCode != 200) {
+        clientResponse.sendStatus(400);
+      }
+      let categoricalData = cypherBody.data.map(row => row[1]);
 
-    let categoricalData = cypherBody.data.map(row => row[1]);
+      let convertToDate: boolean = cypherBody.columns[0] === "date";
+      let categories = cypherBody.data.map(row => convertToDate ? new Date(row[0]*1000).toDateString() : row[0]);
 
-    let convertToDate: boolean = cypherBody.columns[0] === "date";
-    let categories = cypherBody.data.map(row => convertToDate ? new Date(row[0]*1000).toDateString() : row[0]);
+      let bgColors = [];
+      while (bgColors.length < categories.length) {
+        bgColors = bgColors.concat(chartColors.map(v => v.backgroundColor));
+      }
 
-    let bgColors = [];
-    while (bgColors.length < categories.length) {
-      bgColors = bgColors.concat(chartColors.map(v => v.backgroundColor));
-    }
-
-    let chartJsOptions = {
-      type: "pie",
-      data: {
-        datasets: [{
-          data: categoricalData,
-          backgroundColor: bgColors,
-          borderWidth: 0,
-          borderColor: "black"
-        }],
-        labels: categories
-      },
-      options: {... pieChartOptions}
-    };
-    configureGlobal(chartJsOptions, clientRequest.query);
-    sendChart(chartJsOptions, getWidth(clientRequest.query), getHeight(clientRequest.query), clientResponse);
+      let chartJsOptions = {
+        type: "pie",
+        data: {
+          datasets: [{
+            data: categoricalData,
+            backgroundColor: bgColors,
+            borderWidth: 0,
+            borderColor: "black"
+          }],
+          labels: categories
+        },
+        options: {... pieChartOptions}
+      };
+      configureGlobal(chartJsOptions, clientRequest.query);
+      sendChart(chartJsOptions, getWidth(clientRequest.query), getHeight(clientRequest.query), clientResponse);
+    } catch (error) {
+      next(error);
+    }  
   }); 
 });
 
