@@ -21,8 +21,8 @@ app.options("/*", function(req, res, next){
 });	
 
 app.get("/line.png", (clientRequest: express.Request, clientResponse: express.Response, next: express.NextFunction) => {
-  let query = clientRequest.query.query;
-  let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params) : {};
+  let query = clientRequest.query.query.toString();
+  let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params.toString()) : {};
   executeQuery(query, params, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
     try {
       if (cypherError || cypherResponse.statusCode != 200) {
@@ -48,13 +48,8 @@ app.get("/line.png", (clientRequest: express.Request, clientResponse: express.Re
 });
 
 app.get("/bar.png", (clientRequest: express.Request, clientResponse: express.Response, next: express.NextFunction) => {
-  let query: string = clientRequest.query.query;
-  let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params) : {};
-  let x_axis: boolean = clientRequest.query.x_axis !== "false";
-  let y_axis: boolean = clientRequest.query.y_axis !== "false";
-  let legend: boolean = clientRequest.query.legend === "true";
-  let width: number = Number(clientRequest.query.width);
-  let height: number = Number(clientRequest.query.height);
+  let query: string = clientRequest.query.query.toString();
+  let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params.toString()) : {};
   executeQuery(query, params, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
     try {
       if (cypherError || cypherResponse.statusCode != 200) {
@@ -81,8 +76,8 @@ app.get("/bar.png", (clientRequest: express.Request, clientResponse: express.Res
 });
 
 app.get("/pie.png", (clientRequest: express.Request, clientResponse: express.Response, next: express.NextFunction) => {
-  let query = clientRequest.query.query;
-  let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params) : {};
+  let query = clientRequest.query.query.toString();
+  let params = clientRequest.query.params ? JSON.parse(clientRequest.query.params.toString()) : {};
   executeQuery(query, params, (cypherError, cypherResponse, cypherBody: CypherResponse) => {
     try {
       if (cypherError || cypherResponse.statusCode != 200) {
